@@ -32,11 +32,12 @@ with open(args.input_file[0], "rb") as infile:
             else:
                 soup = BeautifulSoup(urllib2.urlopen(req).read())
             for link in soup.find_all('link', rel="alternate"):
-                if link['href'].lower().startswith("http://") or link['href'].lower().startswith("https://"):
-                    # link is absolute
-                    print link['href']
-                else:
-                    # link is relative
-                    print line + link['href']
+                if link.has_attr('type') and (link['type'] == 'application/rss+xml' or link['type'] == 'application/atom+xml'):
+                    if link['href'].lower().startswith("http://") or link['href'].lower().startswith("https://"):
+                        # link is absolute
+                        print link['href']
+                    else:
+                        # link is relative
+                        print line + link['href']
         except (urllib2.HTTPError, urllib2.URLError):
             sys.stderr.write("++ ERROR: " + line + '\n')
