@@ -1,9 +1,13 @@
-import urllib2
+#!/usr/bin/env python3
+
+import urllib.request
 import argparse
 import re
 import sys
 import ssl
 from bs4 import BeautifulSoup
+
+HTML_PARSER = 'html.parser'
 
 parser = argparse.ArgumentParser(description='Extract RSS/ATOM URLs from web sites.')
 parser.add_argument('input_file', type=str, nargs=1, help='input file name')
@@ -22,22 +26,22 @@ if args.no_check_certificate:
     ctx.check_hostname = False
     ctx.verify_mode = ssl.CERT_NONE
 
-with open(args.input_file[0], "rb") as infile:
+with open(args.input_file[0], 'r') as infile:
     for line in infile.readlines():
         try:
             line = re.sub(r'/$', '', line.strip())
-            req = urllib2.Request(line, headers=headers)
+            req = urllib.request.Request(line, headers=headers)
             if ctx != None:
-                soup = BeautifulSoup(urllib2.urlopen(req, context=ctx).read())
+                soup = BeautifulSoup(urllib.request.urlopen(req, context=ctx).read(), HTML_PARSER)
             else:
-                soup = BeautifulSoup(urllib2.urlopen(req).read())
-            for link in soup.find_all('link', rel="alternate"):
+                soup = BeautifulSoup(urllib.request.urlopen(req).read(), HTML_PARSER)
+            for link in soup.find_all('link', rel='alternate'):
                 if link.has_attr('type') and (link['type'] == 'application/rss+xml' or link['type'] == 'application/atom+xml'):
-                    if link['href'].lower().startswith("http://") or link['href'].lower().startswith("https://"):
+                    if link['href'].lower().startswith('http://') or link['href'].lower().startswith('https://'):
                         # link is absolute
-                        print link['href']
+                        print(link['href'])
                     else:
                         # link is relative
-                        print line + link['href']
-        except (urllib2.HTTPError, urllib2.URLError):
-            sys.stderr.write("++ ERROR: " + line + '\n')
+                        print(line + link['href'])
+        except Exception as e:
+            sys.stderr.write(f'++ ERROR({e}): {line}\n')
